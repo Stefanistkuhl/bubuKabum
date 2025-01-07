@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+const CDN_URL = "https://cdn.7tv.app/emote/"
+const API_URL = "https://7tv.io/v3/emotes/"
+
+type FileMetadata struct {
+	filename    string
+	size        int64
+	frame_count int64
+}
+
+type Emote struct {
+	emote_name string
+	animated   bool
+	id         string
+	metadata   FileMetadata
+}
+
 func main() {
 	get_emote("https://7tv.app/emotes/01F6NTBCYG000B70V1XA8K6W4P")
 	get_emote("https://7tv.app/emotes/01F6NACCD80006SZ7ZW5FMWKWK")
@@ -17,39 +33,48 @@ func main() {
 }
 
 func get_emote(emote_url string) {
-	emote_api_url := change_url(emote_url)
-	data := make_request(emote_api_url)
-	emote_name, size, frame_count, is_animated := parse_data(data)
-	fmt.Println(size, frame_count)
-	download_url := make_download_url(emote_url, is_animated)
-	fmt.Println(download_url)
-	download_emote(download_url, emote_name, is_animated)
+	data := make_request(emote_url)
+	emote := parse_data(data)
+	fmt.Println(emote)
+	download_emote(emote.id, emote.emote_name, emote.metadata.filename)
 }
-func parse_data(data []byte) (string, int64, int64, bool) {
-	emote_name := gjson.GetBytes(data, "name")
+
+func parse_data(data []byte) *Emote {
+	emote := new(Emote)
+	emote_name := gjson.GetBytes(data, "name").String()
+	id := gjson.GetBytes(data, "id").String()
 	fmt.Println("emote name: ", emote_name)
-	state := gjson.GetBytes(data, "animated")
-	if state.Bool() == true {
-		fmt.Println("this emote is animated")
-		size := gjson.GetBytes(data, "host.files.11.size")
-		frame_count := gjson.GetBytes(data, "host.files.11.frame_count")
-		fmt.Println("size:", size)
-		fmt.Println("frame_count:", frame_count)
-		return emote_name.String(), size.Int(), frame_count.Int(), state.Bool()
+	file := gjson.GetBytes(data, "host.files.11")
+	file_extension := file.Get("name").String()
+	state := gjson.GetBytes(data, "animated").Bool()
+	if state == true {
+		size := file.Get("size").Int()
+		frame_count := file.Get("frame_count").Int()
+		emote.emote_name = emote_name
+		emote.animated = state
+		emote.id = id
+		emote.metadata.size = size
+		emote.metadata.filename = file_extension
+		emote.metadata.frame_count = frame_count
+		return emote
+
 	} else {
+		size := file.Get("size").Int()
+		frame_count := file.Get("frame_count").Int()
 		fmt.Println("this emote is not animated")
-		return emote_name.String(), 0, 0, state.Bool()
+		emote.emote_name = emote_name
+		emote.animated = state
+		emote.id = id
+		emote.metadata.size = size
+		emote.metadata.filename = file_extension
+		emote.metadata.frame_count = frame_count
+		return emote
 	}
 }
 
-func change_url(input string) string {
-	split := strings.Split(input, "/")
-	base_url := "https://7tv.io/v3/emotes/"
-	url := base_url + split[len(split)-1]
-	return url
-}
-
 func make_request(url string) []byte {
+	split := strings.Split(url, "/")
+	url = API_URL + split[len(split)-1]
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatal(err)
@@ -65,15 +90,9 @@ func make_request(url string) []byte {
 	return data
 }
 
-func download_emote(emote_url string, emote_name string, is_animated bool) {
-	// Build fileName from fullPath
-	fileName := ""
-	if is_animated {
-		fileName = emote_name + ".gif"
-	} else {
-		fileName = emote_name + ".png"
-	}
-
+func download_emote(emote_id string, emote_name string, file_extension string) {
+	fileName := emote_name + file_extension
+	emote_url := CDN_URL + emote_id + "/" + file_extension
 	// Create blank file
 	file, err := os.Create(fileName)
 	if err != nil {
@@ -96,18 +115,5 @@ func download_emote(emote_url string, emote_name string, is_animated bool) {
 
 	defer file.Close()
 
-	fmt.Printf("Downloaded a file %s with size %d", fileName, size)
-}
-func make_download_url(emote_url string, is_animated bool) string {
-	if is_animated {
-		split := strings.Split(emote_url, "/")
-		base_url := "https://cdn.7tv.app/emote/"
-		download_url := base_url + split[len(split)-1] + "/4x.gif"
-		return download_url
-	} else {
-		split := strings.Split(emote_url, "/")
-		base_url := "https://cdn.7tv.app/emote/"
-		download_url := base_url + split[len(split)-1] + "/4x.png"
-		return download_url
-	}
+	fmt.Printf("Downloaded a file %s with size %d \n", fileName, size)
 }
