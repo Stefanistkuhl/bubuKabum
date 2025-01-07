@@ -1,0 +1,15 @@
+github.com/amenzhinsky/go-memexec v0.7.1 h1:DVm4cXzklaNWZoTJgZUi/dlXtelhC7QBtX4luKjl1qk=
+github.com/amenzhinsky/go-memexec v0.7.1/go.mod h1:ApTO9/i2bcii7kvIXi74gum+/zYDzkiOXtuBZoYOKVE=
+github.com/cavaliercoder/grab v3.0.1+incompatible h1:JHkLdLRMRF+WAxj22uB1PjBZUs2iJ8nmmpE1qZL2x1E=
+github.com/cavaliercoder/grab v3.0.1+incompatible/go.mod h1:tTBkfNqSBfuMmMBFaO2phgyhdYhiZQ/+iXCZDzcDsMI=
+github.com/munchpass/gifsicle-go v0.1.0 h1:eYmEWn3y8gLMbJmM5yDKstnnBVoIyFlsqsIix5Grppc=
+github.com/munchpass/gifsicle-go v0.1.0/go.mod h1:rGrf6kIJMPfIthDX9dDfXvqJ7G5WYgsRTl+53O0FcDo=
+github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
+github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
+github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
+github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
+github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
+github.com/tidwall/pretty v1.2.1 h1:qjsOFOWWQl+N3RsoF5/ssm1pHmJJwhjlSbZ51I6wMl4=
+github.com/tidwall/pretty v1.2.1/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
+golang.org/x/sys v0.22.0 h1:RI27ohtqKCnwULzJLqkv897zojh5/DwS/ENaMzUOaWI=
+golang.org/x/sys v0.22.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
