@@ -31,6 +31,7 @@ func get_emote(emote_url string) {
 	emote := parse_data(data)
 	fmt.Println(emote)
 	download_emote(emote)
+	compress_emote(emote)
 }
 
 func parse_data(data []byte) Emote {
