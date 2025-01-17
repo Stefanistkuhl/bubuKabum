@@ -26,7 +26,6 @@ type Frame struct {
 func compress_emote(emote Emote) {
 	var file File
 	fmt.Println("download done now in compress_emote() with", emote.emote_name)
-	fmt.Println("framecount", emote.metadata.frame_count)
 	file.filename = emote.emote_name + emote.metadata.filename
 	file.size = emote.metadata.size
 	file.size = emote.metadata.frame_count
@@ -61,22 +60,20 @@ func reduce_frames(file File) {
 	if err != nil {
 		panic(err)
 	}
-	for {
-		if len(frames) > 59 {
-			break
-		}
-		fmt.Println(len(frames))
-		n := len(frames) / 59
-		fmt.Println(n)
-		//only do call this if n > 1
-		if n > 1 {
-			frames = removeNthElements(frames, n)
-		} else {
-			//idk do sum :sogged:
-		}
-		fmt.Println(len(frames))
+
+	if len(frames) <= 59 {
+		return
 	}
 
+	originalLength := len(frames)
+	targetFrameCount := 59
+	newFrames := make([]Frame, targetFrameCount)
+
+	for i := 0; i < targetFrameCount; i++ {
+		position := int(float64(i) * float64(originalLength-1) / float64(targetFrameCount-1))
+		newFrames[i] = frames[position]
+	}
+	frames = newFrames
 }
 
 func compress_lossy(file File) {}
@@ -116,12 +113,4 @@ func splitGif(gifData []byte) ([]Frame, error) {
 	}
 	return frames, nil
 }
-func removeNthElements(slice []Frame, n int) []Frame {
-	result := make([]Frame, 0, len(slice))
-	for i := 0; i < len(slice); i++ {
-		if (i+1)%n == 0 {
-			result = append(result, slice[i])
-		}
-	}
-	return result
-}
+
