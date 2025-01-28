@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/tidwall/gjson"
 )
 
 const CDN_URL = "https://cdn.7tv.app/emote/"
@@ -52,7 +51,6 @@ func parse_data(data []byte) Emote {
 		emotetmp.metadata.frame_count = file.Get("frame_count").Int()
 		emotearr = append(emotearr, emotetmp)
 	}
-	fmt.Println(len(emotearr))
 	for i := 0; i < len(emotearr); i++ {
 		if i == 0 {
 			if emotearr[0].metadata.size < TARGET_SIZE {
@@ -106,7 +104,6 @@ func make_request(url string) []byte {
 func download_emote(emote Emote) {
 	fileName := "./to-convert/" + emote.emote_name + emote.metadata.filename
 	emote_url := CDN_URL + emote.id + "/" + emote.metadata.filename
-	// Create blank file
 	file, err := os.Create(fileName)
 	if err != nil {
 		log.Fatal(err)
@@ -117,7 +114,6 @@ func download_emote(emote Emote) {
 			return nil
 		},
 	}
-	// Put content on file
 	resp, err := client.Get(emote_url)
 	if err != nil {
 		log.Fatal(err)

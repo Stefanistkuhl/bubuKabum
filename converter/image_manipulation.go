@@ -58,47 +58,46 @@ func compress_emote(emote Emote) {
 			file = reduce_frames(file)
 		}
 		if file.size <= TARGET_SIZE {
-			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename))
+			fmt.Println(file.size/1024, "kb")
+			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), true)
 			if err != nil {
 				panic(err)
 			}
 		} else {
 			file = optimizeGIF(file)
-			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename))
+			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), true)
 			if err != nil {
 				panic(err)
 			}
 		}
 
+	} else {
+		//if 2 frame gif option call func to make it
+		err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), false)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
 func reduce_frames(file File) File {
-	buf := new(bytes.Buffer)
 	frames := file.frames
 	originalLength := len(frames)
 	targetFrameCount := 59
 	newFrames := make([]Frame, targetFrameCount)
-
 	for i := 0; i < targetFrameCount; i++ {
 		position := int(float64(i) * float64(originalLength-1) / float64(targetFrameCount-1))
 		newFrames[i] = frames[position]
 	}
-
 	frames = newFrames
-	file.gif_data = createGIF(frames)
 	file.frames = frames
-	err := gif.EncodeAll(buf, file.gif_data)
-	if err != nil {
-		panic(err)
-	}
-	file.size = int64(buf.Len())
+	file.gif_data = createGIF(frames)
+	file = getFileSize(file)
 	return file
 
 }
 
 func compress_lossy(file File, settings CompressionSettings) File {
-	//make lossy val and colors and dither setupable
 	lossyarg := "--lossy=" + strconv.Itoa(settings.lossy)
 	colorarg := "--colors=" + strconv.Itoa(settings.colors)
 	ditherarg := ""
@@ -216,8 +215,12 @@ func optimizeGIF(file File) File {
 	return file
 }
 
-func moveFile(sourcePath, destPath string) error {
-	destPath = destPath[:len(destPath)-6] + ".gif"
+func moveFile(sourcePath, destPath string, isGif bool) error {
+	if isGif {
+		destPath = destPath[:len(destPath)-6] + ".gif"
+	} else {
+		destPath = destPath[:len(destPath)-6] + ".png"
+	}
 	inputFile, err := os.Open(sourcePath)
 	if err != nil {
 		return fmt.Errorf("Couldn't open source file: %v", err)
