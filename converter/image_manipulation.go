@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"image"
 	"image/gif"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
-// give better name
 type File struct {
 	filename   string
 	gif_data   *gif.GIF
@@ -25,6 +26,16 @@ type Frame struct {
 	Disposal byte
 }
 
+type CompressionSettings struct {
+	lossy      int
+	colors     int
+	dither     bool
+	scale      int
+	targetSize int64
+}
+
+const TARGET_SIZE = 200000
+
 func compress_emote(emote Emote) {
 	var file File
 	fmt.Println("download done now in compress_emote() with", emote.emote_name)
@@ -32,7 +43,6 @@ func compress_emote(emote Emote) {
 	file.size = emote.metadata.size
 	file.framecount = emote.metadata.frame_count
 	if strings.HasSuffix(file.filename, ".gif") {
-
 		gifData, err := os.ReadFile(filepath.Join("to-convert", file.filename))
 		if err != nil {
 			panic(err)
@@ -44,27 +54,22 @@ func compress_emote(emote Emote) {
 		}
 		file.gif_data = createGIF(frames)
 
-		reduceSizeFuncs := []func(file File) File{compress_lossy, resize}
-		i := 0
 		if file.framecount > 59 {
 			file = reduce_frames(file)
 		}
-		if file.size <= 200000 {
-			//do nothing
+		if file.size <= TARGET_SIZE {
+			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename))
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			file = optimizeGIF(file)
+			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename))
+			if err != nil {
+				panic(err)
+			}
 		}
 
-		fmt.Println("size:", file.size/1024, "kb")
-		for {
-			//make it reduce colors -> 512 -> 256 -> 128 then resize
-			file = reduceSizeFuncs[i](file)
-			i = 1 - i
-			if file.size <= 200000 {
-				fmt.Println("size:", file.size/1024, "kb")
-				break
-			}
-			//only temp ther until i actually compress shit
-			break
-		}
 	}
 }
 
@@ -92,15 +97,23 @@ func reduce_frames(file File) File {
 
 }
 
-func compress_lossy(file File) File {
+func compress_lossy(file File, settings CompressionSettings) File {
 	//make lossy val and colors and dither setupable
+	lossyarg := "--lossy=" + strconv.Itoa(settings.lossy)
+	colorarg := "--colors=" + strconv.Itoa(settings.colors)
+	ditherarg := ""
+	if settings.dither {
+		ditherarg = "--dither"
+	}
 	writeFile(file)
-	executeCommand("gifsicle", "-b", file.filename, "--optimize=3", "--lossy=100", "--colors=25", "--dither")
-	return file
+	executeCommand("gifsicle", "-b", file.filename, "--optimize=3", lossyarg, colorarg, ditherarg)
+	return getFileSize(file)
 }
 
-func resize(file File) File {
-	return file
+func resize(file File, fac int) File {
+	scalearg := "--scale=0." + strconv.Itoa(fac)
+	executeCommand("gifsicle", "-b", file.filename, "--optimize=3", scalearg)
+	return getFileSize(file)
 }
 
 func executeCommand(command string, args ...string) error {
@@ -158,7 +171,6 @@ func writeFile(file File) {
 		panic(err)
 	}
 	path := filepath.Join(cwd, "to-convert", file.filename)
-	fmt.Println(path)
 	f, err := os.Create(path)
 	if err != nil {
 		panic(err)
@@ -167,4 +179,67 @@ func writeFile(file File) {
 	file.gif_data = createGIF(file.frames)
 	gif.EncodeAll(f, file.gif_data)
 
+}
+
+func getFileSize(file File) File {
+	f, err := os.Open(filepath.Join("to-convert", file.filename))
+	if err != nil {
+		panic(err)
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		panic(err)
+	}
+	file.size = fi.Size()
+	fmt.Println(file.size/1024, "kb")
+	return file
+}
+
+func optimizeGIF(file File) File {
+	compressionSteps := []CompressionSettings{
+		{lossy: 30, colors: 128, dither: true},
+		{lossy: 50, colors: 64, dither: true},
+		{lossy: 70, colors: 32, dither: true},
+	}
+
+	for _, settings := range compressionSteps {
+		file = compress_lossy(file, settings)
+		if file.size <= TARGET_SIZE {
+			return file
+		}
+	}
+
+	for file.size > TARGET_SIZE {
+		file = resize(file, 8)
+	}
+
+	return file
+}
+
+func moveFile(sourcePath, destPath string) error {
+	destPath = destPath[:len(destPath)-6] + ".gif"
+	inputFile, err := os.Open(sourcePath)
+	if err != nil {
+		return fmt.Errorf("Couldn't open source file: %v", err)
+	}
+	defer inputFile.Close()
+
+	outputFile, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("Couldn't open dest file: %v", err)
+	}
+	defer outputFile.Close()
+
+	_, err = io.Copy(outputFile, inputFile)
+	if err != nil {
+		return fmt.Errorf("Couldn't copy to dest from source: %v", err)
+	}
+
+	inputFile.Close() // for Windows, close before trying to remove: https://stackoverflow.com/a/64943554/246801
+
+	err = os.Remove(sourcePath)
+	if err != nil {
+		return fmt.Errorf("Couldn't remove source file: %v", err)
+	}
+	return nil
 }

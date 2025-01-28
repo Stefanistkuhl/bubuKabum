@@ -7,8 +7,8 @@ import (
 
 func main() {
 	urls := []string{
-		// "https://7tv.app/emotes/01F6NTBCYG000B70V1XA8K6W4P",
-		// "https://7tv.app/emotes/01F6NACCD80006SZ7ZW5FMWKWK",
+		"https://7tv.app/emotes/01F6NTBCYG000B70V1XA8K6W4P",
+		"https://7tv.app/emotes/01F6NACCD80006SZ7ZW5FMWKWK",
 		"https://7tv.app/emotes/01J22JMMVG000EE58Q2GN4M3ZW",
 	}
 
