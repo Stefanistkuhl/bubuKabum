@@ -14,11 +14,12 @@ import (
 )
 
 type File struct {
-	filename   string
-	gif_data   *gif.GIF
-	size       int64
-	framecount int64
-	frames     []Frame
+	filename      string
+	gif_data      *gif.GIF
+	size          int64
+	framecount    int64
+	frames        []Frame
+	make2framegif bool
 }
 type Frame struct {
 	Image    *image.Paletted
@@ -42,6 +43,7 @@ func compress_emote(emote Emote) {
 	file.filename = emote.emote_name + emote.metadata.filename
 	file.size = emote.metadata.size
 	file.framecount = emote.metadata.frame_count
+	file.make2framegif = emote.metadata.make2framegif
 	if strings.HasSuffix(file.filename, ".gif") {
 		gifData, err := os.ReadFile(filepath.Join("to-convert", file.filename))
 		if err != nil {
@@ -72,10 +74,24 @@ func compress_emote(emote Emote) {
 		}
 
 	} else {
-		//if 2 frame gif option call func to make it
-		err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), false)
-		if err != nil {
-			panic(err)
+		if file.make2framegif {
+			executeCommand("magick", file.filename, file.filename, "-delay", "0", "-loop", "0", (file.filename[:len(file.filename)-4] + ".gif"))
+			fmt.Println(file.filename)
+			fmt.Println(file.filename[:len(file.filename)-4] + ".gif")
+			err := moveFile(filepath.Join("to-convert", file.filename[:len(file.filename)-4]+".gif"), filepath.Join("converted", (file.filename[:len(file.filename)-4]+".gif")), true)
+			if err != nil {
+				panic(err)
+			}
+			err = os.Remove(filepath.Join("to-convert", file.filename))
+			if err != nil {
+				panic(err)
+			}
+
+		} else {
+			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), false)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }

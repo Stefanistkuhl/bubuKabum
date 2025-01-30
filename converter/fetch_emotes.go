@@ -15,9 +15,10 @@ const CDN_URL = "https://cdn.7tv.app/emote/"
 const API_URL = "https://7tv.io/v3/emotes/"
 
 type FileMetadata struct {
-	filename    string
-	size        int64
-	frame_count int64
+	filename      string
+	size          int64
+	frame_count   int64
+	make2framegif bool
 }
 
 type Emote struct {
@@ -27,15 +28,15 @@ type Emote struct {
 	metadata   FileMetadata
 }
 
-func get_emote(emote_url string) {
-	data := make_request(emote_url)
-	emote := parse_data(data)
+func get_emote(input inputData) {
+	data := make_request(input.link)
+	emote := parse_data(data, input)
 	fmt.Println(emote)
 	download_emote(emote)
 	compress_emote(emote)
 }
 
-func parse_data(data []byte) Emote {
+func parse_data(data []byte, input inputData) Emote {
 	var emote Emote
 	var emotetmp Emote
 	var emotearr []Emote
@@ -60,6 +61,13 @@ func parse_data(data []byte) Emote {
 				emote.metadata.filename = emotearr[i].metadata.filename
 				emote.metadata.size = emotearr[i].metadata.size
 				emote.metadata.frame_count = emotearr[i].metadata.frame_count
+				emote.metadata.make2framegif = false
+				if input.desiredNamed != "" {
+					emote.emote_name = input.desiredNamed
+				}
+				if input.is2framegif {
+					emote.metadata.make2framegif = true
+				}
 				return emote
 			}
 		} else {
@@ -70,6 +78,12 @@ func parse_data(data []byte) Emote {
 				emote.metadata.filename = emotearr[i].metadata.filename
 				emote.metadata.size = emotearr[i].metadata.size
 				emote.metadata.frame_count = emotearr[i].metadata.frame_count
+				if input.desiredNamed != "" {
+					emote.emote_name = input.desiredNamed
+				}
+				if input.is2framegif {
+					emote.metadata.make2framegif = true
+				}
 				return emote
 			}
 		}
@@ -80,6 +94,12 @@ func parse_data(data []byte) Emote {
 	emote.metadata.filename = emotearr[len(emotearr)-1].metadata.filename
 	emote.metadata.size = emotearr[len(emotearr)-1].metadata.size
 	emote.metadata.frame_count = emotearr[len(emotearr)-1].metadata.frame_count
+	if input.desiredNamed != "" {
+		emote.emote_name = input.desiredNamed
+	}
+	if input.is2framegif {
+		emote.metadata.make2framegif = true
+	}
 	return emote
 }
 
