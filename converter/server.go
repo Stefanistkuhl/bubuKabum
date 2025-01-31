@@ -32,7 +32,7 @@ func handleEmote(c *gin.Context) {
 		})
 		return
 	}
-	response := start_getting_emotes_or_sum_which_is_the_same_as_main_before_i_really_hate_naming_smh(request)
+	response := processEmoteRequests(request)
 	fmt.Println(response)
 	// fmt.Printf("%+v\n", request)
 	c.JSON(http.StatusOK, gin.H{})

@@ -11,7 +11,7 @@ type inputData struct {
 	desiredNamed string
 }
 
-func start_getting_emotes_or_sum_which_is_the_same_as_main_before_i_really_hate_naming_smh(request Request) Response {
+func processEmoteRequests(request Request) Response {
 	var response Response
 	inputs := []inputData{}
 	for i := range request.Links {
