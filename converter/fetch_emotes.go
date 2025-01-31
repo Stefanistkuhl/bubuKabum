@@ -2,13 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/tidwall/gjson"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/gjson"
 )
 
 const CDN_URL = "https://cdn.7tv.app/emote/"
@@ -19,6 +21,7 @@ type FileMetadata struct {
 	size          int64
 	frame_count   int64
 	make2framegif bool
+	guildId       string
 }
 
 type Emote struct {
@@ -50,6 +53,7 @@ func parse_data(data []byte, input inputData) Emote {
 		emotetmp.metadata.filename = file.Get("name").String()
 		emotetmp.metadata.size = file.Get("size").Int()
 		emotetmp.metadata.frame_count = file.Get("frame_count").Int()
+		emotetmp.metadata.guildId = input.guildId
 		emotearr = append(emotearr, emotetmp)
 	}
 	for i := 0; i < len(emotearr); i++ {
@@ -62,6 +66,7 @@ func parse_data(data []byte, input inputData) Emote {
 				emote.metadata.size = emotearr[i].metadata.size
 				emote.metadata.frame_count = emotearr[i].metadata.frame_count
 				emote.metadata.make2framegif = false
+				emote.metadata.guildId = input.guildId
 				if input.desiredNamed != "" {
 					emote.emote_name = input.desiredNamed
 				}
@@ -78,6 +83,7 @@ func parse_data(data []byte, input inputData) Emote {
 				emote.metadata.filename = emotearr[i].metadata.filename
 				emote.metadata.size = emotearr[i].metadata.size
 				emote.metadata.frame_count = emotearr[i].metadata.frame_count
+				emote.metadata.guildId = input.guildId
 				if input.desiredNamed != "" {
 					emote.emote_name = input.desiredNamed
 				}
@@ -94,6 +100,7 @@ func parse_data(data []byte, input inputData) Emote {
 	emote.metadata.filename = emotearr[len(emotearr)-1].metadata.filename
 	emote.metadata.size = emotearr[len(emotearr)-1].metadata.size
 	emote.metadata.frame_count = emotearr[len(emotearr)-1].metadata.frame_count
+	emote.metadata.guildId = input.guildId
 	if input.desiredNamed != "" {
 		emote.emote_name = input.desiredNamed
 	}
@@ -122,7 +129,9 @@ func make_request(url string) []byte {
 }
 
 func download_emote(emote Emote) {
-	fileName := "./to-convert/" + emote.emote_name + emote.metadata.filename
+	os.MkdirAll(filepath.Join("to-convert", emote.metadata.guildId), 0700)
+	// fileName := string(emote.metadata.guildId) + "to-convert" + emote.emote_name + emote.metadata.filename
+	fileName := filepath.Join("to-convert", string(emote.metadata.guildId), emote.emote_name+emote.metadata.filename)
 	emote_url := CDN_URL + emote.id + "/" + emote.metadata.filename
 	file, err := os.Create(fileName)
 	if err != nil {

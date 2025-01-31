@@ -11,6 +11,7 @@ type EmoteRequest struct {
 	Link        string `json:"link"`
 	Is2FrameGif bool   `json:"is_2_frame_gif"`
 	DesiredName string `json:"desired_name"`
+	GuildID     string `json:"guild_id"`
 }
 
 type Request struct {
@@ -22,6 +23,7 @@ type Response struct {
 func server() {
 	r := gin.Default()
 	r.POST("/api/emote", handleEmote)
+	r.StaticFS("/converted", http.Dir("static/converted"))
 	r.Run(":6999")
 }
 func handleEmote(c *gin.Context) {
@@ -32,7 +34,7 @@ func handleEmote(c *gin.Context) {
 		})
 		return
 	}
-	response := processEmoteRequests(request)
+	response := process_emote_requests(request)
 	fmt.Println(response)
 	// fmt.Printf("%+v\n", request)
 	c.JSON(http.StatusOK, gin.H{})

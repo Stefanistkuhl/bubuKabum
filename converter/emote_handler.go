@@ -9,9 +9,10 @@ type inputData struct {
 	link         string
 	is2framegif  bool
 	desiredNamed string
+	guildId      string
 }
 
-func processEmoteRequests(request Request) Response {
+func process_emote_requests(request Request) Response {
 	var response Response
 	inputs := []inputData{}
 	for i := range request.Links {
@@ -20,6 +21,7 @@ func processEmoteRequests(request Request) Response {
 		tmp.link = request.Links[i].Link
 		tmp.is2framegif = request.Links[i].Is2FrameGif
 		tmp.desiredNamed = request.Links[i].DesiredName
+		tmp.guildId = request.Links[i].GuildID
 		inputs = append(inputs, tmp)
 	}
 	fmt.Println(inputs)

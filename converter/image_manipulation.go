@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/gif"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,6 +22,7 @@ type File struct {
 	framecount    int64
 	frames        []Frame
 	make2framegif bool
+	guildId       string
 }
 type Frame struct {
 	Image    *image.Paletted
@@ -44,8 +47,9 @@ func compress_emote(emote Emote) {
 	file.size = emote.metadata.size
 	file.framecount = emote.metadata.frame_count
 	file.make2framegif = emote.metadata.make2framegif
+	file.guildId = emote.metadata.guildId
 	if strings.HasSuffix(file.filename, ".gif") {
-		gifData, err := os.ReadFile(filepath.Join("to-convert", file.filename))
+		gifData, err := os.ReadFile(filepath.Join("to-convert", file.guildId, file.filename))
 		if err != nil {
 			panic(err)
 		}
@@ -61,13 +65,21 @@ func compress_emote(emote Emote) {
 		}
 		if file.size <= TARGET_SIZE {
 			fmt.Println(file.size/1024, "kb")
-			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), true)
+			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
+			if !exists(outputDir) {
+				os.MkdirAll(outputDir, 0700)
+			}
+			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename), filepath.Join(outputDir, file.filename), true)
 			if err != nil {
 				panic(err)
 			}
 		} else {
 			file = optimizeGIF(file)
-			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), true)
+			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
+			if !exists(outputDir) {
+				os.MkdirAll(outputDir, 0700)
+			}
+			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename), filepath.Join(outputDir, file.filename), true)
 			if err != nil {
 				panic(err)
 			}
@@ -75,20 +87,28 @@ func compress_emote(emote Emote) {
 
 	} else {
 		if file.make2framegif {
-			executeCommand("magick", file.filename, file.filename, "-delay", "0", "-loop", "0", (file.filename[:len(file.filename)-4] + ".gif"))
+			executeCommand(file.guildId, "magick", file.filename, file.filename, "-delay", "0", "-loop", "0", (file.filename[:len(file.filename)-4] + ".gif"))
 			fmt.Println(file.filename)
 			fmt.Println(file.filename[:len(file.filename)-4] + ".gif")
-			err := moveFile(filepath.Join("to-convert", file.filename[:len(file.filename)-4]+".gif"), filepath.Join("converted", (file.filename[:len(file.filename)-4]+".gif")), true)
+			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
+			if !exists(outputDir) {
+				os.MkdirAll(outputDir, 0700)
+			}
+			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename[:len(file.filename)-4]+".gif"), filepath.Join(outputDir, (file.filename[:len(file.filename)-4]+".gif")), true)
 			if err != nil {
 				panic(err)
 			}
-			err = os.Remove(filepath.Join("to-convert", file.filename))
+			err = os.Remove(filepath.Join("to-convert", file.guildId, file.filename))
 			if err != nil {
 				panic(err)
 			}
 
 		} else {
-			err := moveFile(filepath.Join("to-convert", file.filename), filepath.Join("converted", file.filename), false)
+			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
+			if !exists(outputDir) {
+				os.MkdirAll(outputDir, 0700)
+			}
+			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename), filepath.Join(outputDir, file.filename), true)
 			if err != nil {
 				panic(err)
 			}
@@ -121,23 +141,23 @@ func compress_lossy(file File, settings CompressionSettings) File {
 		ditherarg = "--dither"
 	}
 	writeFile(file)
-	executeCommand("gifsicle", "-b", file.filename, "--optimize=3", lossyarg, colorarg, ditherarg)
+	executeCommand(file.guildId, "gifsicle", "-b", file.filename, "--optimize=3", lossyarg, colorarg, ditherarg)
 	return getFileSize(file)
 }
 
 func resize(file File, fac int) File {
 	scalearg := "--scale=0." + strconv.Itoa(fac)
-	executeCommand("gifsicle", "-b", file.filename, "--optimize=3", scalearg)
+	executeCommand(file.guildId, "gifsicle", "-b", file.filename, "--optimize=3", scalearg)
 	return getFileSize(file)
 }
 
-func executeCommand(command string, args ...string) error {
+func executeCommand(guildId string, command string, args ...string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get current directory: %v", err)
 	}
 	cmd := exec.Command(command, args...)
-	toconvertdir := filepath.Join(cwd, "to-convert")
+	toconvertdir := filepath.Join(cwd, "to-convert", guildId)
 	cmd.Dir = toconvertdir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -261,4 +281,14 @@ func moveFile(sourcePath, destPath string, isGif bool) error {
 		return fmt.Errorf("Couldn't remove source file: %v", err)
 	}
 	return nil
+}
+func exists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if errors.Is(err, fs.ErrNotExist) {
+		return false
+	}
+	return false
 }
