@@ -1,3 +1,4 @@
 *.gif
 *.png
 *.env
+bot/node_modules/
