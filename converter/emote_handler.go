@@ -13,7 +13,6 @@ type inputData struct {
 }
 
 func process_emote_requests(request Request) Response {
-	var response Response
 	inputs := []inputData{}
 	for i := range request.Links {
 		fmt.Println(request.Links[i].Link)
@@ -24,16 +23,21 @@ func process_emote_requests(request Request) Response {
 		tmp.guildId = request.Links[i].GuildID
 		inputs = append(inputs, tmp)
 	}
-	fmt.Println(inputs)
 
+	response := Response{
+		ResponseObject: make([]ResponseElements, len(inputs)),
+	}
 	var wg sync.WaitGroup
 
-	for _, input := range inputs {
+	for i, input := range inputs {
 		wg.Add(1)
-		go func(input inputData) {
+		go func(idx int, input inputData) {
+			var responseData ResponseElements
 			defer wg.Done()
-			get_emote(input)
-		}(input)
+			responseData = get_emote(input)
+			response.ResponseObject[idx].Filename = responseData.Filename
+			response.ResponseObject[idx].GuildId = responseData.GuildId
+		}(i, input)
 	}
 
 	wg.Wait()

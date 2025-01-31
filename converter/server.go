@@ -18,6 +18,11 @@ type Request struct {
 	Links []EmoteRequest `json:"emotes"`
 }
 type Response struct {
+	ResponseObject []ResponseElements `json:"emotes"`
+}
+type ResponseElements struct {
+	Filename string `json:"filename"`
+	GuildId  string `json:"guildId"`
 }
 
 func server() {
@@ -37,5 +42,5 @@ func handleEmote(c *gin.Context) {
 	response := process_emote_requests(request)
 	fmt.Println(response)
 	// fmt.Printf("%+v\n", request)
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, response)
 }

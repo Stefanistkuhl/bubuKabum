@@ -31,12 +31,14 @@ type Emote struct {
 	metadata   FileMetadata
 }
 
-func get_emote(input inputData) {
+func get_emote(input inputData) ResponseElements {
 	data := make_request(input.link)
 	emote := parse_data(data, input)
 	fmt.Println(emote)
 	download_emote(emote)
-	compress_emote(emote)
+	response := compress_emote(emote)
+	return response
+
 }
 
 func parse_data(data []byte, input inputData) Emote {

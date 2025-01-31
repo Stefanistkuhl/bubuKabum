@@ -40,8 +40,9 @@ type CompressionSettings struct {
 
 const TARGET_SIZE = 200000
 
-func compress_emote(emote Emote) {
+func compress_emote(emote Emote) ResponseElements {
 	var file File
+	var response ResponseElements
 	fmt.Println("download done now in compress_emote() with", emote.emote_name)
 	file.filename = emote.emote_name + emote.metadata.filename
 	file.size = emote.metadata.size
@@ -65,6 +66,8 @@ func compress_emote(emote Emote) {
 		}
 		if file.size <= TARGET_SIZE {
 			fmt.Println(file.size/1024, "kb")
+			response.Filename = file.filename[:len(file.filename)-6] + ".gif"
+			response.GuildId = file.guildId
 			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
 			if !exists(outputDir) {
 				os.MkdirAll(outputDir, 0700)
@@ -73,7 +76,10 @@ func compress_emote(emote Emote) {
 			if err != nil {
 				panic(err)
 			}
+			return response
 		} else {
+			response.Filename = file.filename[:len(file.filename)-6] + ".gif"
+			response.GuildId = file.guildId
 			file = optimizeGIF(file)
 			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
 			if !exists(outputDir) {
@@ -83,10 +89,13 @@ func compress_emote(emote Emote) {
 			if err != nil {
 				panic(err)
 			}
+			return response
 		}
 
 	} else {
 		if file.make2framegif {
+			response.Filename = file.filename[:len(file.filename)-6] + ".gif"
+			response.GuildId = file.guildId
 			executeCommand(file.guildId, "magick", file.filename, file.filename, "-delay", "0", "-loop", "0", (file.filename[:len(file.filename)-4] + ".gif"))
 			fmt.Println(file.filename)
 			fmt.Println(file.filename[:len(file.filename)-4] + ".gif")
@@ -102,16 +111,20 @@ func compress_emote(emote Emote) {
 			if err != nil {
 				panic(err)
 			}
+			return response
 
 		} else {
+			response.Filename = file.filename[:len(file.filename)-6] + ".png"
+			response.GuildId = file.guildId
 			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
 			if !exists(outputDir) {
 				os.MkdirAll(outputDir, 0700)
 			}
-			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename), filepath.Join(outputDir, file.filename), true)
+			err := moveFile(filepath.Join("to-convert", file.guildId, file.filename), filepath.Join(outputDir, file.filename), false)
 			if err != nil {
 				panic(err)
 			}
+			return response
 		}
 	}
 }
