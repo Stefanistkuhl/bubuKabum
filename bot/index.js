@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const dotenv = require('dotenv');
 dotenv.config();
-const { MessageFlags, Client, Collection, ModalBuilder, Events, ButtonStyle, GatewayIntentBits, StringSelectMenuOptionBuilder, StringSelectMenuBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+const { MessageFlags, Client, Collection, ModalBuilder, Events, GatewayIntentBits, TextInputBuilder, TextInputStyle, ActionRowBuilder, } = require('discord.js');
 
 const client = new Client({
 	intents: [
@@ -11,6 +11,17 @@ const client = new Client({
 		GatewayIntentBits.GuildExpressions
 	],
 });
+
+const requestvals = {
+	link: "",
+	is2Frame: false,
+	name: "",
+	guildid: "",
+}
+
+const apiUrl = "http://localhost:6999/api/emote"
+
+const regex = /https:\/\/(?:7tv\.app|old\.7tv\.app)\/emotes\/[A-Z0-9]{26}/;
 
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
@@ -62,18 +73,18 @@ client.on(Events.InteractionCreate, async interaction => {
 
 			const linkInput = new TextInputBuilder()
 				.setCustomId('linkInput')
-				.setLabel("Enter a 7tv link")
+				.setLabel("Enter the 7tv Emote URL")
 				.setRequired(true)
 				.setStyle(TextInputStyle.Short);
 
 			const nameInput = new TextInputBuilder()
 				.setCustomId('nameInput')
-				.setLabel("Desired Emote Name")
+				.setLabel("Emote Name (Optional)")
 				.setStyle(TextInputStyle.Short)
 				.setRequired(false);
 			const is2FrameGifInput = new TextInputBuilder()
 				.setCustomId('2FrameGif')
-				.setLabel("make this a 2 frame gif?")
+				.setLabel("Convert to 2-frame GIF? (Optional, yes/no)")
 				.setStyle(TextInputStyle.Short)
 				.setRequired(false);
 
@@ -85,7 +96,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 			await interaction.showModal(modal);
 		} else if (interaction.customId === 'close') {
-			await interaction.update({ content: 'leck eier', components: [] });
+			await interaction.update({ content: 'closing', components: [] });
 		}
 	}
 
@@ -95,12 +106,77 @@ client.on(Events.InteractionCreate, async interaction => {
 			const link = interaction.fields.getTextInputValue('linkInput');
 			const name = interaction.fields.getTextInputValue('nameInput');
 			const gif = interaction.fields.getTextInputValue('2FrameGif');
-
-			await interaction.reply({ content: `Received link: ${link}\nName: ${name} \n gif: ${gif}`, ephemeral: true });
-			// Handle your emote addition logic here
+			var gif_conv
+			if (gif.toLowerCase() === "yes" || gif.toLowerCase() === "y") {
+				gif_conv = true
+			} else {
+				gif_conv = false
+			}
+			if (regex.test(link)) {
+			} else {
+				console.log("regex fail")
+				await interaction.reply({ content: `please enter a valid link`, ephemeral: true });
+				return;
+			}
+			result = await isEmoteNotFound(link)
+			if (result) {
+				await interaction.reply({ content: `please enter a valid link`, ephemeral: true });
+				return;
+			}
+			const guild = interaction.guild.id
+			requestvals.link = link
+			requestvals.name = name
+			requestvals.is2Frame = gif_conv
+			requestvals.guildid = guild
+			console.log(requestvals)
+			let data = await sendEmoteRequest(requestvals)
+			console.log(data.emotes[0])
+			console.log(data.emotes[0].filename)
+			console.log(data.emotes[0].guildId)
+			await interaction.reply({ content: `Received link: ${requestvals.link}\nName: ${requestvals.name} \n gif: ${requestvals.is2Frame}`, ephemeral: true });
 		}
 	}
 });
 
+async function isEmoteNotFound(link) {
+	var link_to_test = "https://7tv.io/v3/emotes/" + link.substr(-26);
+	try {
+		const response = await fetch(link_to_test);
+		const data = await response.json();
+		return data.error_code === 12000;
+	} catch (error) {
+		return false;
+	}
+}
+async function sendEmoteRequest(requestvals) {
+	const payload = {
+		emotes: [
+			{
+				link: requestvals.link,
+				is_2_frame_gif: requestvals.is2Frame,
+				desired_name: requestvals.name,
+				guild_id: requestvals.guildid
+			}
+		]
+	};
+	const requestOptions = {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(payload),
+	};
+	try {
+		const response = await fetch(apiUrl, requestOptions);
+		if (!response.ok) {
+			throw new Error('Network response was not ok');
+		}
+		const data = await response.json();
+		return data;
+	} catch (error) {
+		console.error('Error:', error);
+		throw error;
+	}
 
+}
 client.login(process.env.TOKEN);

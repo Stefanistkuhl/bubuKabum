@@ -5,22 +5,27 @@ module.exports = {
 		.setName('deine')
 		.setDescription('dei mama'),
 	async execute(interaction) {
-		const confirm = new ButtonBuilder()
+		const close = new ButtonBuilder()
 			.setCustomId('close')
-			.setLabel('close')
+			.setLabel('Close')
+			.setStyle(ButtonStyle.Danger);
+		const submit = new ButtonBuilder()
+			.setCustomId('submit')
+			.setLabel('Submit')
 			.setStyle(ButtonStyle.Success);
 
 		const addMore = new ButtonBuilder()
 			.setCustomId('addMore')
 			.setLabel('Add more emotes')
-			.setStyle(ButtonStyle.Primary);
+			.setStyle(ButtonStyle.Success);
 
 		const row = new ActionRowBuilder()
-			.addComponents(addMore, confirm);
+			.addComponents(addMore, close);
 
 		await interaction.reply({
 			content: `erm`,
 			components: [row],
+			ephemeral: true,
 		});
 	},
 };
