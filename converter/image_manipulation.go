@@ -43,7 +43,6 @@ const TARGET_SIZE = 200000
 func compress_emote(emote Emote) ResponseElements {
 	var file File
 	var response ResponseElements
-	fmt.Println("download done now in compress_emote() with", emote.emote_name)
 	file.filename = emote.emote_name + emote.metadata.filename
 	file.size = emote.metadata.size
 	file.framecount = emote.metadata.frame_count
@@ -65,7 +64,6 @@ func compress_emote(emote Emote) ResponseElements {
 			file = reduce_frames(file)
 		}
 		if file.size <= TARGET_SIZE {
-			fmt.Println(file.size/1024, "kb")
 			response.Filename = file.filename[:len(file.filename)-6] + ".gif"
 			response.GuildId = file.guildId
 			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
@@ -97,8 +95,6 @@ func compress_emote(emote Emote) ResponseElements {
 			response.Filename = file.filename[:len(file.filename)-6] + ".gif"
 			response.GuildId = file.guildId
 			executeCommand(file.guildId, "magick", file.filename, file.filename, "-delay", "0", "-loop", "0", (file.filename[:len(file.filename)-4] + ".gif"))
-			fmt.Println(file.filename)
-			fmt.Println(file.filename[:len(file.filename)-4] + ".gif")
 			outputDir := filepath.Join(filepath.Join("static", "converted", file.guildId))
 			if !exists(outputDir) {
 				os.MkdirAll(outputDir, 0700)
@@ -239,7 +235,6 @@ func getFileSize(file File) File {
 		panic(err)
 	}
 	file.size = fi.Size()
-	fmt.Println(file.size/1024, "kb")
 	return file
 }
 

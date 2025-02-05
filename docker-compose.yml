@@ -1,0 +1,5 @@
+services:
+  emotebot:
+    container_name: bubuKabum
+    image: bubukabum:latest
+    restart:  unless-stopped

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type EmoteRequest struct {
@@ -26,6 +24,7 @@ type ResponseElements struct {
 }
 
 func server() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.POST("/api/emote", handleEmote)
 	r.StaticFS("/converted", http.Dir("static/converted"))
@@ -40,7 +39,5 @@ func handleEmote(c *gin.Context) {
 		return
 	}
 	response := process_emote_requests(request)
-	fmt.Println(response)
-	// fmt.Printf("%+v\n", request)
 	c.JSON(http.StatusOK, response)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io"
 	"log"
 	"net/http"
@@ -9,8 +10,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/tidwall/gjson"
 )
 
 const CDN_URL = "https://cdn.7tv.app/emote/"
@@ -34,7 +33,6 @@ type Emote struct {
 func get_emote(input inputData) ResponseElements {
 	data := make_request(input.link)
 	emote := parse_data(data, input)
-	fmt.Println(emote)
 	download_emote(emote)
 	response := compress_emote(emote)
 	return response
@@ -132,7 +130,6 @@ func make_request(url string) []byte {
 
 func download_emote(emote Emote) {
 	os.MkdirAll(filepath.Join("to-convert", emote.metadata.guildId), 0700)
-	// fileName := string(emote.metadata.guildId) + "to-convert" + emote.emote_name + emote.metadata.filename
 	fileName := filepath.Join("to-convert", string(emote.metadata.guildId), emote.emote_name+emote.metadata.filename)
 	emote_url := CDN_URL + emote.id + "/" + emote.metadata.filename
 	file, err := os.Create(fileName)

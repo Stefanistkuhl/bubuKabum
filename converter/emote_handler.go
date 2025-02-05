@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -15,7 +14,6 @@ type inputData struct {
 func process_emote_requests(request Request) Response {
 	inputs := []inputData{}
 	for i := range request.Links {
-		fmt.Println(request.Links[i].Link)
 		var tmp inputData
 		tmp.link = request.Links[i].Link
 		tmp.is2framegif = request.Links[i].Is2FrameGif
@@ -41,6 +39,5 @@ func process_emote_requests(request Request) Response {
 	}
 
 	wg.Wait()
-	fmt.Println("Done")
 	return response
 }
