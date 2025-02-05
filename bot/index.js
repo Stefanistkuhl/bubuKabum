@@ -99,7 +99,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
 			await interaction.showModal(modal);
 		} else if (interaction.customId === 'close') {
-			await interaction.update({ content: 'closing', components: [] });
+			await interaction.update({ content: 'Closing', components: [] });
 		}
 	}
 
@@ -117,13 +117,12 @@ client.on(Events.InteractionCreate, async interaction => {
 			}
 			if (regex.test(link)) {
 			} else {
-				console.log("regex fail")
-				await interaction.reply({ content: `please enter a valid link`, ephemeral: true });
+				await interaction.reply({ content: `Please enter a valid link`, ephemeral: true });
 				return;
 			}
 			result = await isEmoteNotFound(link)
 			if (result) {
-				await interaction.reply({ content: `please enter a valid link`, ephemeral: true });
+				await interaction.reply({ content: `Please enter a valid link`, ephemeral: true });
 				return;
 			}
 			const guildid = interaction.guild.id
@@ -132,11 +131,7 @@ client.on(Events.InteractionCreate, async interaction => {
 			requestvals.name = name
 			requestvals.is2Frame = gif_conv
 			requestvals.guildid = guildid
-			console.log(requestvals)
 			let data = await sendEmoteRequest(requestvals)
-			console.log(data.emotes[0])
-			console.log(data.emotes[0].filename)
-			console.log(data.emotes[0].guildId)
 			const path = "./downloads/" + data.emotes[0].guildId;
 			fs.access(path, (error) => {
 				if (error) {
@@ -144,11 +139,9 @@ client.on(Events.InteractionCreate, async interaction => {
 						if (error) {
 							console.log(error);
 						} else {
-							console.log("dir created");
 						}
 					});
 				} else {
-					console.log("dir alr exists");
 				}
 			});
 			const emotePath = await downloadEmote(data)
@@ -163,6 +156,34 @@ client.on(Events.InteractionCreate, async interaction => {
 					emoteName = "_" + emoteName;
 				}
 			}
+			await guild.emojis.fetch();
+			const animatedCount = guild.emojis.cache.filter(emoji => emoji.animated).size;
+			const staticCount = guild.emojis.cache.filter(emoji => !emoji.animated).size;
+			let totalSlots;
+			switch (guild.premiumTier) {
+				case "TIER_1":
+					totalSlots = 200;
+					break;
+				case "TIER_2":
+					totalSlots = 350;
+					break;
+				case "TIER_3":
+					totalSlots = 500;
+					break;
+				default:
+					totalSlots = 100;
+			}
+			const maxPerType = totalSlots / 2;
+			const availableAnimatedSlots = maxPerType - animatedCount;
+			const availableStaticSlots = maxPerType - staticCount;
+			if (emotePath.endsWith(".gif") && availableAnimatedSlots === 0) {
+				await interaction.reply({ content: `No animated emote slots available`, ephemeral: true });
+				return;
+			} else if (emotePath.endsWith(".png") && availableStaticSlots === 0) {
+				await interaction.reply({ content: `No static emote slots available`, ephemeral: true });
+				return;
+			}
+
 			guild.emojis.create({ attachment: emotePath, name: emoteName })
 				.then(emoji => console.log(`Created new emoji with name ${emoji.name}!`))
 				.catch(console.error);
