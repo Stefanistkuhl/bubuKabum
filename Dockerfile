@@ -1,5 +1,5 @@
 FROM alpine:latest
-RUN apk add --no-cache go nodejs npm
+RUN apk add --no-cache go nodejs npm gifsicle imagemagick
 RUN mkdir /bubuKabum
 ADD bot /bubuKabum/bot
 ADD converter /bubuKabum/converter
