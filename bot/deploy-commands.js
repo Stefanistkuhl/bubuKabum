@@ -33,11 +33,17 @@ const rest = new REST().setToken(process.env.TOKEN);
 	try {
 		console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
+		rest.put(Routes.applicationCommands(process.env.APPID), { body: [] })
+			.then(() => console.log('Successfully deleted all application commands.'))
+			.catch(console.error);
 		// The put method is used to fully refresh all commands in the guild with the current set
 		const data = await rest.put(
 			Routes.applicationCommands(process.env.APPID),
 			{ body: commands },
 		);
+		// rest.delete(Routes.applicationCommand(process.env.APPID, '1334935748314664970'))
+		// 	.then(() => console.log('Successfully deleted application command'))
+		// 	.catch(console.error);
 
 		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
 	} catch (error) {
@@ -45,4 +51,5 @@ const rest = new REST().setToken(process.env.TOKEN);
 		console.error(error);
 	}
 })();
+
 

@@ -20,6 +20,7 @@ const requestvals = {
 }
 
 const apiUrl = "http://localhost:6999/api/emote"
+const apiDownloadUrl = "http://localhost:6999/converted"
 
 const regex = /https:\/\/(?:7tv\.app|old\.7tv\.app)\/emotes\/[A-Z0-9]{26}/;
 
@@ -81,6 +82,8 @@ client.on(Events.InteractionCreate, async interaction => {
 				.setCustomId('nameInput')
 				.setLabel("Emote Name (Optional)")
 				.setStyle(TextInputStyle.Short)
+				.setMinLength(2)
+				.setMaxLength(32)
 				.setRequired(false);
 			const is2FrameGifInput = new TextInputBuilder()
 				.setCustomId('2FrameGif')
@@ -123,17 +126,47 @@ client.on(Events.InteractionCreate, async interaction => {
 				await interaction.reply({ content: `please enter a valid link`, ephemeral: true });
 				return;
 			}
-			const guild = interaction.guild.id
+			const guildid = interaction.guild.id
+			const guild = interaction.guild
 			requestvals.link = link
 			requestvals.name = name
 			requestvals.is2Frame = gif_conv
-			requestvals.guildid = guild
+			requestvals.guildid = guildid
 			console.log(requestvals)
 			let data = await sendEmoteRequest(requestvals)
 			console.log(data.emotes[0])
 			console.log(data.emotes[0].filename)
 			console.log(data.emotes[0].guildId)
-			await interaction.reply({ content: `Received link: ${requestvals.link}\nName: ${requestvals.name} \n gif: ${requestvals.is2Frame}`, ephemeral: true });
+			const path = "./downloads/" + data.emotes[0].guildId;
+			fs.access(path, (error) => {
+				if (error) {
+					fs.mkdir(path, { recursive: true }, (error) => {
+						if (error) {
+							console.log(error);
+						} else {
+							console.log("dir created");
+						}
+					});
+				} else {
+					console.log("dir alr exists");
+				}
+			});
+			const emotePath = await downloadEmote(data)
+			let emoteName = data.emotes[0].filename.replace(/\.[^/.]+$/, "");
+			if (requestvals.emoteName === "") {
+				emoteName = requestvals.emoteName;
+			} else {
+				if (emoteName.length > 32) {
+					emoteName = emoteName.substring(0, 32);
+				}
+				else if (emoteName.length < 2) {
+					emoteName = "_" + emoteName;
+				}
+			}
+			guild.emojis.create({ attachment: emotePath, name: emoteName })
+				.then(emoji => console.log(`Created new emoji with name ${emoji.name}!`))
+				.catch(console.error);
+			await interaction.reply({ content: `Sucessfully added emote: ${emoteName}`, ephemeral: true });
 		}
 	}
 });
@@ -148,6 +181,29 @@ async function isEmoteNotFound(link) {
 		return false;
 	}
 }
+
+async function downloadEmote(data) {
+	try {
+		const downloadUrl = `${apiDownloadUrl}/${data.emotes[0].guildId}/${data.emotes[0].filename}`;
+		const response = await fetch(downloadUrl);
+
+		if (!response.ok) {
+			throw new Error('Download failed');
+		}
+
+		const buffer = await response.arrayBuffer();
+
+		const filePath = path.join('./downloads', data.emotes[0].guildId, data.emotes[0].filename);
+
+		await fs.promises.writeFile(filePath, Buffer.from(buffer));
+
+		return filePath;
+	} catch (error) {
+		console.error('Error downloading emote:', error);
+		throw error;
+	}
+}
+
 async function sendEmoteRequest(requestvals) {
 	const payload = {
 		emotes: [
