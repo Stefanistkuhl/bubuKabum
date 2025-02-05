@@ -12,7 +12,7 @@ Discord bot that clones and optimizes 7TV emotes for Discord servers.
 ## Prerequisites
 
 - Docker Desktop (Windows/Mac) or Docker Engine (Linux)
-- Discord Bot Token & Application ID ([Setup Instructions](https://postimg.cc/gallery/WqhXSfd))
+- Discord Bot Token & Application ID ([Setup Instructions](https://postimg.cc/gallery/Nm5hcW1))
 
 ## Installation
 
