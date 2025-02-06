@@ -226,7 +226,7 @@ func writeFile(file File) {
 }
 
 func getFileSize(file File) File {
-	f, err := os.Open(filepath.Join("to-convert", file.filename))
+	f, err := os.Open(filepath.Join("to-convert", file.guildId, file.filename))
 	if err != nil {
 		panic(err)
 	}

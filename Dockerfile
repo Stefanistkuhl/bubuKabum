@@ -10,4 +10,5 @@ WORKDIR /bubuKabum/bot
 RUN npm install
 COPY entrypoint.sh /bin/entrypoint.sh
 RUN chmod +x /bin/entrypoint.sh
+EXPOSE 6999
 ENTRYPOINT ["/bin/sh", "/bin/entrypoint.sh"]
